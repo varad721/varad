@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1>Bot Dashboard</h1>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#stats">Stats</a></li>
+                <li><a href="#bypass">Bypass</a></li>
+                <li><a href="#modlogs">Logs</a></li>
+                <li><a href="#settings">Settings</a></li>
+            </ul>
+            <div class="nav-right">
+                <span class="owner-badge">Owner</span>
+                <button onclick="handleLogout()" class="btn-logout">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <section id="home" class="hero">
+            <div class="hero-content">
+                <h2>Advanced Discord Bot</h2>
+                <p>Manage bot settings, moderation logs, and link-warning bypass list from one place.</p>
+                <div class="hero-actions">
+                    <a href="#stats" class="btn-primary">View Stats</a>
+                    <a href="#bypass" class="btn-secondary">Manage Bypass List</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="stats" class="stats-section">
+            <h2>Bot Statistics</h2>
+            <div class="stats-grid">
+                <div class="stat-card"><h3>Guilds</h3><p class="stat-value" id="stat-guilds">0</p></div>
+                <div class="stat-card"><h3>Warnings</h3><p class="stat-value" id="stat-warnings">0</p></div>
+                <div class="stat-card"><h3>Bans</h3><p class="stat-value" id="stat-bans">0</p></div>
+                <div class="stat-card"><h3>Mod Logs</h3><p class="stat-value" id="stat-logs">0</p></div>
+                <div class="stat-card"><h3>Bypass Users</h3><p class="stat-value" id="stat-bypass">0</p></div>
+            </div>
+        </section>
+
+        <section id="bypass" class="bypass-section">
+            <h2>Link Warning Bypass</h2>
+            <p class="section-desc">Users added here will NOT be flagged for posting links. The bot owner is always bypassed.</p>
+            <div class="bypass-controls">
+                <div class="bypass-form-row">
+                    <input type="number" id="bypass-guild-id" placeholder="Guild ID *">
+                    <input type="number" id="bypass-user-id" placeholder="User ID *">
+                    <input type="text" id="bypass-reason" placeholder="Reason (optional)">
+                    <button onclick="addBypassUser()" class="btn-primary">Add Bypass</button>
+                </div>
+                <div class="bypass-form-row">
+                    <input type="number" id="bypass-load-guild" placeholder="Load list for guild ID">
+                    <button onclick="loadBypassUsers()" class="btn-secondary">Load List</button>
+                </div>
+            </div>
+            <div id="bypass-message" class="msg"></div>
+            <div id="bypass-table-wrapper">
+                <table id="bypass-table">
+                    <thead><tr><th>User ID</th><th>Guild ID</th><th>Reason</th><th>Added By</th><th>Date</th><th>Action</th></tr></thead>
+                    <tbody id="bypass-tbody"><tr><td colspan="6" class="empty-state">Enter guild ID and click Load List</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="modlogs" class="modlogs-section">
+            <h2>Moderation Logs</h2>
+            <div class="filter-section">
+                <input type="number" id="guild-id-input" placeholder="Enter Guild ID">
+                <button onclick="fetchModlogs()">Load Logs</button>
+            </div>
+            <div id="modlogs-container" class="modlogs-table"><p class="empty-state">Enter guild ID to view logs</p></div>
+        </section>
+
+        <section id="settings" class="settings-section">
+            <h2>Guild Settings</h2>
+            <div class="settings-form">
+                <div class="form-group">
+                    <label>Guild ID:</label>
+                    <input type="number" id="guild-id" placeholder="Enter Guild ID">
+                </div>
+                <div class="form-group">
+                    <label>Prefix:</label>
+                    <input type="text" id="prefix" maxlength="5" value="/">
+                </div>
+                <div class="form-group">
+                    <label>Mod Log Channel ID:</label>
+                    <input type="number" id="mod-log-channel" placeholder="Channel ID (optional)">
+                </div>
+                <div class="form-group checkbox-group">
+                    <label><input type="checkbox" id="auto-mod-enabled" checked> Enable Auto-Moderation</label>
+                </div>
+                <div class="settings-actions">
+                    <button onclick="saveGuildSettings()" class="btn-primary">Save</button>
+                    <button onclick="loadGuildSettings()" class="btn-secondary">Load</button>
+                </div>
+            </div>
+            <div id="settings-message" class="msg"></div>
+        </section>
+    </div>
+
+    <footer><p>Advanced Discord Bot &bull; Owner ID: <%= ownerId %></p></footer>
+    <script src="/script.js"></script>
+</body>
+</html>

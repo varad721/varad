@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Bot Dashboard</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-icon">🛡️</div>
+                <h1>Owner Access</h1>
+                <p>Enter your Discord Owner ID to access the dashboard</p>
+            </div>
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label for="owner-id-input">Discord User ID (Owner)</label>
+                    <input type="password" id="owner-id-input" placeholder="Enter your Discord ID" required autofocus>
+                </div>
+                <button type="submit" class="btn-primary login-btn">Unlock Dashboard</button>
+                <p id="login-error" class="login-error"></p>
+            </form>
+            <div class="login-footer">
+                <p>Only the bot owner can access this panel</p>
+            </div>
+        </div>
+    </div>
+    <script>
+        async function handleLogin(e) {
+            e.preventDefault();
+            const userId = document.getElementById('owner-id-input').value.trim();
+            const errorEl = document.getElementById('login-error');
+            const btn = document.querySelector('.login-btn');
+            if (!userId) { errorEl.textContent = 'Enter your Discord ID'; return; }
+            btn.disabled = true; btn.textContent = 'Verifying...';
+            try {
+                const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
+                const data = await res.json();
+                if (data.status === 'success') window.location.href = '/';
+                else errorEl.textContent = 'Invalid owner ID.';
+            } catch { errorEl.textContent = 'Connection error.'; }
+            btn.disabled = false; btn.textContent = 'Unlock Dashboard';
+        }
+    </script>
+</body>
+</html>

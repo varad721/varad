@@ -1,0 +1,32 @@
+{
+  "name": "advanced-discord-bot",
+  "version": "1.0.0",
+  "description": "Advanced Discord bot with moderation, security, and web dashboard",
+  "main": "index.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "bot": "node index.js",
+    "postinstall": "node -e \"const fs=require('fs'); if(!fs.existsSync('data')) fs.mkdirSync('data',{recursive:true})\""
+  },
+  "dependencies": {
+    "discord.js": "^14.16.0",
+    "@discordjs/voice": "^0.17.0",
+    "@discordjs/rest": "^2.3.0",
+    "discord-api-types": "^0.37.0",
+    "better-sqlite3": "^11.0.0",
+    "express": "^4.21.0",
+    "ejs": "^3.1.10",
+    "express-session": "^1.18.0",
+    "dotenv": "^16.4.5",
+    "ytdl-core": "^4.11.5",
+    "play-dl": "^1.9.7",
+    "ffmpeg-static": "^5.2.0",
+    "openai": "^4.67.0",
+    "@google/generative-ai": "^0.21.0",
+    "libsodium-wrappers": "^0.7.14",
+    "tweetnacl": "^1.0.3"
+  }
+}
