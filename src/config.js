@@ -3,7 +3,8 @@ require('dotenv').config();
 module.exports = {
   token: process.env.DISCORD_TOKEN,
   applicationId: process.env.APPLICATION_ID,
-  ownerId: BigInt(process.env.OWNER_ID || 0),
+  ownerIds: (process.env.OWNER_ID || '0').split(',').map(id => id.trim()),
+  ownerId: process.env.OWNER_ID?.split(',')[0]?.trim() || '0',
   dbPath: process.env.DATABASE_PATH || 'data/bot.db',
 
   dashboard: {
@@ -11,6 +12,9 @@ module.exports = {
     host: process.env.DASHBOARD_HOST || '0.0.0.0',
     port: parseInt(process.env.DASHBOARD_PORT || '5000'),
     secret: process.env.DASHBOARD_SECRET || require('crypto').randomBytes(32).toString('hex'),
+    clientId: process.env.DISCORD_APP_ID || process.env.APPLICATION_ID,
+    clientSecret: process.env.DISCORD_CLIENT_SECRET,
+    redirectUri: process.env.DISCORD_REDIRECT_URI || 'http://localhost:5000/auth/callback',
   },
 
   openai: {
@@ -25,7 +29,7 @@ module.exports = {
   },
 
   defaultSettings: {
-    prefix: '!',
+    prefix: ',',
     autoModEnabled: true,
     spamThreshold: 5,
     spamWindow: 10,

@@ -4,6 +4,7 @@ const fs = require('fs');
 const config = require('./config');
 const DB = require('./database');
 const SecurityManager = require('./security');
+const prefixCmds = require('./prefixCommands');
 
 class Bot extends Client {
   constructor() {
@@ -21,7 +22,8 @@ class Bot extends Client {
 
     this.db = new DB();
     this.security = new SecurityManager();
-    this.ownerId = BigInt(config.ownerId);
+    this.ownerIds = config.ownerIds;
+    this.ownerId = config.ownerId;
     this.commands = new Collection();
     this.snipeCache = new Map();
     this.musicQueues = new Map();
@@ -39,6 +41,7 @@ class Bot extends Client {
     this.on(Events.MessageDelete, this.onMessageDelete);
     this.on(Events.MessageReactionAdd, this.onReactionAdd);
     this.on(Events.GuildCreate, this.onGuildJoin);
+    this.on(Events.GuildMemberAdd, this.onMemberJoin);
     this.on(Events.Error, console.error);
   }
 
@@ -94,21 +97,25 @@ class Bot extends Client {
 
   startReminderChecker() {
     setInterval(async () => {
-      const dueReminders = this.db.getDueReminders();
-      for (const reminder of dueReminders) {
-        try {
-          const channel = await this.channels.fetch(reminder.channel_id);
-          if (channel) {
-            await channel.send({
-              content: `<@${reminder.user_id}> ⏰ Reminder: ${reminder.message}`,
-            });
+      try {
+        const dueReminders = this.db.getDueReminders();
+        for (const reminder of dueReminders) {
+          try {
+            const channel = await this.channels.fetch(reminder.channel_id);
+            if (channel) {
+              await channel.send({
+                content: `<@${reminder.user_id}> ⏰ Reminder: ${reminder.message}`,
+              });
+            }
+            this.db.deleteReminder(reminder.id);
+          } catch (e) {
+            console.error('Failed to send reminder:', e);
           }
-          this.db.deleteReminder(reminder.id);
-        } catch (e) {
-          console.error('Failed to send reminder:', e);
         }
+      } catch (e) {
+        console.error('Reminder checker error:', e);
       }
-    }, 30000); // Check every 30 seconds
+    }, 30000);
   }
 
   async onMessage(message) {
@@ -117,34 +124,64 @@ class Bot extends Client {
 
     this.db.createGuildSettings(message.guild.id);
     const settings = this.db.getGuildSettings(message.guild.id);
+    const isOwner = this.ownerIds.includes(String(message.author.id));
+    const isBypassed = this.db.isBypassUser(message.guild.id, message.author.id);
 
-    // XP gain system
-    const xpGain = Math.floor(Math.random() * 15) + 10; // 10-25 XP per message
-    const levelResult = this.db.addXP(message.guild.id, message.author.id, xpGain);
+    // Handle prefix commands (owner only)
+    const prefix = settings?.prefix || config.defaultSettings.prefix;
     
-    if (levelResult.leveledUp) {
-      const rewards = this.db.getLevelRewards(message.guild.id);
-      const reward = rewards.find(r => r.level === levelResult.newLevel);
-      if (reward) {
+    if (message.content.startsWith(prefix) && isOwner) {
+      const args = message.content.slice(prefix.length).trim().split(/ +/);
+      const cmd = args.shift().toLowerCase();
+      
+      if (prefixCmds[cmd]) {
         try {
-          await message.member.roles.add(reward.role_id);
-          message.channel.send({
-            content: `🎉 ${message.author} leveled up to **${levelResult.newLevel}** and received the <@&${reward.role_id}> role!`,
-          }).catch(() => {});
+          await prefixCmds[cmd](message, args, this);
         } catch (e) {
-          console.error('Failed to add level reward role:', e);
+          console.error(`Error executing prefix command ${cmd}:`, e);
+          message.reply({ content: '❌ Command failed', ephemeral: true }).catch(() => {});
         }
-      } else {
-        message.channel.send({
-          content: `🎉 ${message.author} leveled up to **${levelResult.newLevel}**!`,
-        }).catch(() => {});
+        return;
       }
     }
 
-    const isOwner = String(message.author.id) === String(config.ownerId);
-    const isBypassed = this.db.isBypassUser(message.guild.id, message.author.id);
     if (isOwner || isBypassed) return;
 
+    // XP gain system
+    if (settings && settings.leveling_enabled !== 0) {
+      const multiplier = settings.xp_multiplier || 1;
+      const xpGain = Math.floor((Math.random() * 15 + 10) * multiplier);
+      const levelResult = this.db.addXP(message.guild.id, message.author.id, xpGain);
+      
+      if (levelResult.leveledUp) {
+        const rewards = this.db.getLevelRewards(message.guild.id);
+        const reward = rewards.find(r => r.level === levelResult.newLevel);
+        
+        const levelChannel = settings.level_channel ? await message.guild.channels.fetch(settings.level_channel).catch(() => null) : message.channel;
+        
+        if (reward) {
+          try {
+            await message.member.roles.add(reward.role_id);
+            if (levelChannel) {
+              levelChannel.send({
+                content: `🎉 ${message.author} leveled up to **${levelResult.newLevel}** and received the <@&${reward.role_id}> role!`,
+              }).catch(() => {});
+            }
+          } catch (e) {
+            console.error('Failed to add level reward role:', e);
+          }
+        } else {
+          if (levelChannel) {
+            levelChannel.send({
+              content: `🎉 ${message.author} leveled up to **${levelResult.newLevel}**!`,
+            }).catch(() => {});
+          }
+        }
+      }
+    }
+
+    const isGlobalBypassed = this.db.isGlobalBypass(message.author.id);
+    
     if (settings && settings.auto_mod_enabled) {
       if (this.security.checkBadContent(message.content)) {
         try { await message.delete(); } catch {}
@@ -157,6 +194,10 @@ class Bot extends Client {
         else if (count === 3) { duration = 30; action = 'Timeout'; }
         else if (count >= 5) { action = 'Kick'; }
         else { duration = 30; action = 'Timeout'; }
+
+        if (isGlobalBypassed) {
+          return; // Skip punishment for global bypass users
+        }
 
         if (action === 'Kick') {
           try {
@@ -253,6 +294,63 @@ class Bot extends Client {
         description: 'Use `/help` to see commands. Check the dashboard for advanced settings!',
         color: 0x5865F2,
       }] }).catch(() => {});
+    }
+  }
+
+  async onMemberJoin(member) {
+    if (!member.guild) return;
+    
+    this.db.createGuildSettings(member.guild.id);
+    const settings = this.db.getGuildSettings(member.guild.id);
+    
+    if (settings && settings.welcome_channel) {
+      try {
+        const channel = await member.guild.channels.fetch(settings.welcome_channel);
+        if (channel && channel.isTextBased()) {
+          try {
+            const { createCanvas, loadImage } = require('canvas');
+            const { AttachmentBuilder } = require('discord.js');
+            
+            const canvas = createCanvas(800, 300);
+            const ctx = canvas.getContext('2d');
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, 800, 300);
+            gradient.addColorStop(0, '#5865F2');
+            gradient.addColorStop(1, '#EB459E');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 800, 300);
+            
+            // User avatar
+            const avatar = await loadImage(member.user.displayAvatarURL({ extension: 'png', size: 128 }));
+            ctx.beginPath();
+            ctx.arc(150, 150, 80, 0, Math.PI * 2);
+            ctx.closePath();
+            ctx.clip();
+            ctx.drawImage(avatar, 70, 70, 160, 160);
+            
+            // Text
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText('Welcome', 300, 100);
+            
+            ctx.font = 'bold 48px Arial';
+            ctx.fillText(member.user.tag, 300, 160);
+            
+            ctx.font = '24px Arial';
+            ctx.fillText(`Member #${member.guild.memberCount}`, 300, 220);
+            
+            const attachment = new AttachmentBuilder(canvas.toBuffer(), { name: 'welcome.png' });
+            
+            channel.send({ files: [attachment] }).catch(() => {});
+          } catch (e) {
+            // Canvas failed, send text welcome instead
+            channel.send({ content: `Welcome ${member}! 👋` }).catch(() => {});
+          }
+        }
+      } catch (e) {
+        console.error('Failed to send welcome message:', e);
+      }
     }
   }
 

@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Dashboard + Leveling</title>
+    <style>
+        :root {
+            --bg: #101318;
+            --panel: #171b22;
+            --panel-2: #1f2530;
+            --line: #303846;
+            --text: #eef2f7;
+            --muted: #9aa7b8;
+            --brand: #5865f2;
+            --ok: #35c47a;
+            --warn: #f6b047;
+            --bad: #ef5960;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Segoe UI, system-ui, Arial, sans-serif; background: var(--bg); color: var(--text); }
+        header { position: sticky; top: 0; z-index: 5; background: rgba(16, 19, 24, .96); border-bottom: 1px solid var(--line); }
+        .bar { max-width: 1400px; margin: 0 auto; padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+        .brand { display: flex; align-items: center; gap: 12px; font-weight: 700; }
+        .mark { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--brand); color: white; }
+        nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        nav a, button, .button { border: 1px solid var(--line); background: var(--panel-2); color: var(--text); border-radius: 8px; padding: 9px 12px; text-decoration: none; cursor: pointer; font: inherit; transition: all 0.2s; }
+        nav a:hover, button:hover { background: var(--panel); }
+        button.primary, .button.primary { background: var(--brand); border-color: var(--brand); }
+        button.danger { color: #ffdce0; border-color: rgba(239, 89, 96, .5); }
+        main { max-width: 1400px; margin: 0 auto; padding: 24px 20px 44px; }
+        section { margin: 0 0 24px; border-top: 1px solid var(--line); padding-top: 20px; }
+        h2, h3 { margin: 0 0 14px 0; }
+        h2 { font-size: 18px; }
+        h3 { font-size: 15px; color: var(--muted); }
+        p { color: var(--muted); margin: 0; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; }
+        .metric, .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+        .metric span { color: var(--muted); font-size: 12px; text-transform: uppercase; }
+        .metric strong { display: block; font-size: 24px; margin-top: 4px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        input, select, textarea { width: 100%; background: #0f1217; color: var(--text); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font: inherit; }
+        textarea { min-height: 80px; resize: vertical; }
+        .field { margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid var(--line); padding: 10px; text-align: left; font-size: 12px; }
+        th { color: var(--muted); text-transform: uppercase; }
+        .member-card { background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+        .member-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .member-info { flex: 1; }
+        .member-name { font-weight: 600; margin-bottom: 4px; }
+        .member-id { font-size: 12px; color: var(--muted); }
+        .member-actions { display: flex; gap: 6px; }
+        .member-actions button { padding: 6px 10px; font-size: 12px; width: auto; }
+        .console { background: #0f1217; border: 1px solid var(--line); border-radius: 8px; padding: 12px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; line-height: 1.4; }
+        .log-line { padding: 2px 0; }
+        .log-line.INFO { color: var(--ok); }
+        .log-line.WARNING { color: var(--warn); }
+        .log-line.ERROR { color: var(--bad); }
+        .log-time { color: var(--muted); margin-right: 6px; }
+        .lb-row { display: flex; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); align-items: center; }
+        .lb-rank { color: var(--brand); font-weight: 600; min-width: 30px; }
+        .lb-info { flex: 1; }
+        .lb-name { font-weight: 500; }
+        .lb-level { color: var(--warn); font-size: 12px; }
+        #toast { position: fixed; bottom: 20px; right: 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 16px; color: var(--warn); z-index: 100; max-width: 400px; }
+        .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+        .tab { padding: 10px 14px; border: none; background: transparent; color: var(--muted); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+        .tab.active { color: var(--text); border-bottom-color: var(--brand); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        @media (max-width: 1024px) { .grid, .grid3 { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="bar">
+            <div class="brand"><div class="mark">B</div>Bot Dashboard + Leveling</div>
+            <nav>
+                <a href="#overview">Overview</a>
+                <a href="#leveling">Leveling</a>
+                <a href="#members">Members</a>
+                <a href="#console">Console</a>
+                <button class="danger" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="overview">
+            <h2>📊 Overview</h2>
+            <div class="grid">
+                <div class="metrics">
+                    <div class="metric"><span>Guilds</span><strong id="m-guilds">0</strong></div>
+                    <div class="metric"><span>Users</span><strong id="m-users">0</strong></div>
+                    <div class="metric"><span>Warnings</span><strong id="m-warnings">0</strong></div>
+                    <div class="metric"><span>Logs</span><strong id="m-logs">0</strong></div>
+                </div>
+                <div class="panel">
+                    <h3>Guild Selection</h3>
+                    <div class="field">
+                        <label>Select Guild</label>
+                        <select id="guild" onchange="loadAll()"></select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="leveling">
+            <h2>⭐ Leveling System</h2>
+            <div class="grid3">
+                <div class="panel">
+                    <h3>Setup Level Roles</h3>
+                    <p style="font-size: 12px; margin-bottom: 12px;">Automatically create roles for level 5, 7, 10, and 15</p>
+                    <button class="primary" onclick="setupLevelRoles()" style="width: 100%;">Create Level Roles</button>
+                    <div style="margin-top: 12px; font-size: 12px; color: var(--muted);">
+                        <p>🎁 Level 5 = GIF Permission</p>
+                        <p>🎨 Level 7 = Sticker Permission</p>
+                        <p>😀 Level 10 = Custom Emoji</p>
+                        <p>📎 Level 15 = File Attachment</p>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>User Level Info</h3>
+                    <div class="field">
+                        <label>Search User ID</label>
+                        <input id="user-id-search" placeholder="12345...">
+                    </div>
+                    <div style="margin-top: 12px;">
+                        <p><strong id="user-level-display">N/A</strong></p>
+                        <p style="font-size: 12px;">XP: <span id="user-xp-display">0</span>/<span id="user-xp-needed-display">100</span></p>
+                        <button class="primary" onclick="searchUserLevel()" style="width: 100%; margin-top: 8px;">Check Level</button>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h3>Leaderboard Stats</h3>
+                    <div id="lb-stats" style="font-size: 12px; line-height: 1.8;"></div>
+                    <button class="primary" onclick="loadLeaderboard()" style="width: 100%; margin-top: 12px;">Refresh</button>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px;">
+                <h3>Top 10 Leaderboard</h3>
+                <div id="leaderboard" style="max-height: 400px; overflow-y: auto;"></div>
+            </div>
+        </section>
+
+        <section id="members">
+            <h2>👥 Member Management</h2>
+            <div class="grid">
+                <div class="panel">
+                    <h3>Search & Filter</h3>
+                    <div class="field">
+                        <label>Search Name/ID</label>
+                        <input id="search" placeholder="username or user ID" onkeyup="loadMembers()">
+                    </div>
+                </div>
+                <div class="panel" id="members-list">
+                    <h3>Members (Top 50)</h3>
+                    <div id="members-container" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+
+            <div class="panel" style="margin-top: 20px;">
+                <h3>Quick Actions</h3>
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('','timeout-act')">Timeout</button>
+                    <button class="tab" onclick="switchTab('','warn-act')">Warn</button>
+                    <button class="tab" onclick="switchTab('','ban-act')">Ban</button>
+                </div>
+
+                <div id="timeout-act" class="tab-content active">
+                    <div class="field"><label>Duration</label><select id="timeout-duration"><option value="1m">1 min</option><option value="5m">5 min</option><option value="10m" selected>10 min</option><option value="1h">1 hour</option><option value="1d">1 day</option></select></div>
+                    <div class="field"><label>Reason</label><input id="timeout-reason" placeholder="reason"></div>
+                </div>
+                <div id="warn-act" class="tab-content"><div class="field"><label>Reason</label><input id="warn-reason" placeholder="reason"></div></div>
+                <div id="ban-act" class="tab-content"><div class="field"><label>Reason</label><input id="ban-reason" placeholder="reason"></div></div>
+
+                <button class="danger" id="action-btn" style="width: 100%; padding: 10px;">Execute Action</button>
+            </div>
+        </section>
+
+        <section id="console">
+            <h2>📋 Activity Console</h2>
+            <div class="panel">
+                <div class="console" id="console-logs"></div>
+                <button class="primary" onclick="loadConsole()" style="width: 100%; margin-top: 12px;">Refresh Logs</button>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        const $ = id => document.getElementById(id);
+        async function json(url, opts = {}) { return (await fetch(url, opts)).json(); }
+        function switchTab(s, t) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            $(t).classList.add('active');
+            event.target.classList.add('active');
+        }
+        function toast(msg, color = '#f6b047') {
+            const t = $('toast');
+            t.textContent = msg;
+            t.style.color = color;
+            setTimeout(() => t.textContent = '', 4000);
+        }
+
+        async function loadStats() {
+            const d = await json('/api/stats');
+            if (d.status !== 'success') return;
+            $('m-guilds').textContent = d.guilds;
+            $('m-users').textContent = d.users;
+            $('m-warnings').textContent = d.warnings;
+            $('m-logs').textContent = d.modlogs;
+        }
+
+        async function loadGuilds() {
+            const d = await json('/api/guilds');
+            const sel = $('guild');
+            sel.innerHTML = '';
+            d.guilds.forEach(g => {
+                const o = document.createElement('option');
+                o.value = g.id;
+                o.textContent = `${g.name} (${g.members})`;
+                sel.appendChild(o);
+            });
+            if (d.guilds.length) loadAll();
+        }
+
+        async function loadAll() {
+            loadMembers();
+            loadLeaderboard();
+            loadConsole();
+        }
+
+        async function loadMembers() {
+            const gId = $('guild').value;
+            const s = $('search').value;
+            if (!gId) return;
+            const d = await json(`/api/members/${gId}?search=${s}&limit=50`);
+            const c = $('members-container');
+            c.innerHTML = '';
+            d.members.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'member-card';
+                div.innerHTML = `
+                    <img class="member-avatar" src="${m.avatar}" onerror="this.src='https://cdn.discordapp.com/embed/avatars/0.png'">
+                    <div class="member-info">
+                        <div class="member-name">${m.name}</div>
+                        <div class="member-id">ID: ${m.id}</div>
+                    </div>
+                    <div class="member-actions">
+                        <button onclick="doAction('${m.id}', 'warn')" style="background:#f6b047;border:1px solid #f6b047;">⚠️</button>
+                        <button onclick="doAction('${m.id}', 'timeout')" style="background:#faa61a;border:1px solid #faa61a;">⏱️</button>
+                        <button onclick="doAction('${m.id}', 'ban')" class="danger">🚫</button>
+                    </div>
+                `;
+                c.appendChild(div);
+            });
+        }
+
+        function doAction(uId, act) {
+            const gId = $('guild').value;
+            if (!gId) return toast('Select guild first');
+            let reason = '';
+            let dur = '';
+            if (act === 'timeout') { reason = $('timeout-reason').value || 'No reason'; dur = $('timeout-duration').value; }
+            else if (act === 'warn') { reason = $('warn-reason').value || 'No reason'; }
+            else if (act === 'ban') { reason = $('ban-reason').value || 'No reason'; }
+            executeAction(gId, uId, act, reason, dur);
+        }
+
+        async function executeAction(gId, uId, act, reason, dur) {
+            const r = await json(`/api/member_action/${gId}/${uId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: act, reason, duration: dur })
+            });
+            toast(r.message || 'Done', r.status === 'success' ? '#35c47a' : '#ef5960');
+            if (r.status === 'success') { loadAll(); }
+        }
+
+        async function loadLeaderboard() {
+            const gId = $('guild').value;
+            if (!gId) return;
+            const d = await json(`/api/leaderboard/${gId}?limit=10`);
+            const lb = $('leaderboard');
+            lb.innerHTML = '';
+            let stats = '<p>📈 Top Players:</p>';
+            d.leaderboard.slice(0, 3).forEach((u, i) => {
+                stats += `<p>#${i+1}: Level ${u.level} (${u.xp} XP)</p>`;
+            });
+            $('lb-stats').innerHTML = stats;
+
+            d.leaderboard.forEach((u, i) => {
+                const row = document.createElement('div');
+                row.className = 'lb-row';
+                row.innerHTML = `
+                    <span class="lb-rank">#${i+1}</span>
+                    <div class="lb-info">
+                        <div class="lb-name">User ${u.user_id}</div>
+                        <div class="lb-level">⭐ Level ${u.level} • ${u.xp} XP</div>
+                    </div>
+                `;
+                lb.appendChild(row);
+            });
+        }
+
+        async function searchUserLevel() {
+            const gId = $('guild').value;
+            const uId = $('user-id-search').value;
+            if (!gId || !uId) return toast('Enter guild and user ID');
+            const d = await json(`/api/level/${gId}/${uId}`);
+            $('user-level-display').textContent = `⭐ Level ${d.level}`;
+            $('user-xp-display').textContent = d.xp;
+            $('user-xp-needed-display').textContent = d.xp_needed;
+        }
+
+        async function setupLevelRoles() {
+            const gId = $('guild').value;
+            if (!gId) return toast('Select guild first');
+            toast('Creating roles...');
+            const r = await json(`/api/setup_levels/${gId}`, { method: 'POST' });
+            toast(r.status === 'success' ? `Created ${r.created} level roles!` : 'Failed', r.status === 'success' ? '#35c47a' : '#ef5960');
+            loadConsole();
+        }
+
+        async function loadConsole() {
+            const gId = $('guild').value;
+            if (!gId) return;
+            const d = await json(`/api/console_logs/${gId}?limit=50`);
+            const c = $('console-logs');
+            c.innerHTML = '';
+            d.logs.forEach(l => {
+                const div = document.createElement('div');
+                div.className = `log-line ${l.level}`;
+                const t = new Date(l.created_at).toLocaleTimeString();
+                div.innerHTML = `<span class="log-time">[${t}]</span> ${l.message}`;
+                c.appendChild(div);
+            });
+            c.scrollTop = c.scrollHeight;
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            location.href = '/login';
+        }
+
+        loadStats();
+        loadGuilds();
+        setInterval(loadStats, 15000);
+    </script>
+</body>
+</html>

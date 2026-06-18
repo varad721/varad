@@ -4,7 +4,7 @@
   "description": "Advanced Discord bot with moderation, security, and web dashboard",
   "main": "index.js",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "start": "node index.js",
@@ -27,6 +27,9 @@
     "openai": "^4.67.0",
     "@google/generative-ai": "^0.21.0",
     "libsodium-wrappers": "^0.7.14",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "canvas": "^2.11.2",
+    "node-cron": "^3.0.3",
+    "axios": "^1.6.0"
   }
 }

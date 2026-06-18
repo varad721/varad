@@ -1,33 +1,25 @@
 @echo off
-REM Discord Bot startup (Node.js) — Windows
-
 echo.
-echo Advanced Discord Bot (Node.js)
+echo Discord Bot + Dashboard
 echo.
 
-node --version >nul 2>&1
+python --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Node.js 18+ is required. Install from https://nodejs.org/
+    echo ERROR: Python 3.11+ is required.
     pause
     exit /b 1
 )
 
 if not exist ".env" (
-    if exist ".env.example" (
-        copy ".env.example" ".env"
-        echo Created .env — add your DISCORD_TOKEN before starting.
-    ) else (
-        echo ERROR: .env file missing
-        pause
-        exit /b 1
-    )
+    copy ".env.example" ".env"
+    echo Created .env. Add your DISCORD_TOKEN and OWNER_ID before starting.
+    pause
+    exit /b 0
 )
 
-if not exist "node_modules\" (
-    echo Installing dependencies...
-    call npm install
-)
+echo Installing dependencies...
+python -m pip install -r requirements.txt
 
-echo Starting bot + dashboard...
-node index.js
+echo Starting bot and dashboard...
+python bot.py
 pause

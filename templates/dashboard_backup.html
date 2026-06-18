@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Discord Bot Dashboard</title>
+    <style>
+        :root {
+            --bg: #101318;
+            --panel: #171b22;
+            --panel-2: #1f2530;
+            --line: #303846;
+            --text: #eef2f7;
+            --muted: #9aa7b8;
+            --brand: #5865f2;
+            --ok: #35c47a;
+            --warn: #f6b047;
+            --bad: #ef5960;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0;
+            font-family: Segoe UI, system-ui, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+        }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: rgba(16, 19, 24, .96);
+            border-bottom: 1px solid var(--line);
+        }
+        .bar {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+        .mark {
+            width: 34px;
+            height: 34px;
+            border-radius: 8px;
+            display: grid;
+            place-items: center;
+            background: var(--brand);
+            color: white;
+        }
+        nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        nav a, button, .button {
+            border: 1px solid var(--line);
+            background: var(--panel-2);
+            color: var(--text);
+            border-radius: 8px;
+            padding: 9px 12px;
+            text-decoration: none;
+            cursor: pointer;
+            font: inherit;
+            transition: all 0.2s;
+        }
+        nav a:hover, button:hover { background: var(--panel); }
+        button.primary, .button.primary { background: var(--brand); border-color: var(--brand); }
+        button.danger { color: #ffdce0; border-color: rgba(239, 89, 96, .5); }
+        button.warn { color: #fff4e6; border-color: rgba(246, 176, 71, .5); }
+        main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px 44px;
+        }
+        section { margin: 0 0 24px; border-top: 1px solid var(--line); padding-top: 20px; }
+        h1, h2, h3, p { margin-top: 0; }
+        h1 { font-size: 28px; margin-bottom: 8px; }
+        h2 { font-size: 18px; margin-bottom: 14px; }
+        h3 { font-size: 15px; margin-bottom: 8px; color: var(--muted); }
+        p { color: var(--muted); }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        .metric, .panel {
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .metric span { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        .metric strong { display: block; font-size: 28px; margin-top: 4px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+        input, select, textarea {
+            width: 100%;
+            background: #0f1217;
+            color: var(--text);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 10px;
+            font: inherit;
+        }
+        textarea { min-height: 96px; resize: vertical; }
+        .field { margin-bottom: 12px; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 8px;
+        }
+        th, td {
+            border-bottom: 1px solid var(--line);
+            padding: 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+        th { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+        code {
+            background: #0f1217;
+            border: 1px solid var(--line);
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: #cbd5ff;
+        }
+        .tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); margin-bottom: 16px; }
+        .tab {
+            padding: 10px 14px;
+            border: none;
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab.active { color: var(--text); border-bottom-color: var(--brand); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .member-card {
+            background: var(--panel-2);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .member-info { flex: 1; }
+        .member-name { font-weight: 600; margin-bottom: 4px; }
+        .member-id { font-size: 12px; color: var(--muted); }
+        .member-actions {
+            display: flex;
+            gap: 6px;
+        }
+        .member-actions button {
+            padding: 6px 10px;
+            font-size: 12px;
+            width: auto;
+        }
+        .console {
+            background: #0f1217;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .log-line {
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .log-line.INFO { color: var(--ok); }
+        .log-line.WARNING { color: var(--warn); }
+        .log-line.ERROR { color: var(--bad); }
+        .log-time { color: var(--muted); margin-right: 8px; }
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: var(--warn);
+            z-index: 100;
+            max-width: 400px;
+        }
+        @media (max-width: 1024px) {
+            .grid { grid-template-columns: 1fr; }
+            .metrics { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="bar">
+            <div class="brand"><div class="mark">B</div><div>Bot Dashboard</div></div>
+            <nav>
+                <a href="#overview">Overview</a>
+                <a href="#members">Members</a>
+                <a href="#console">Console</a>
+                <a href="#settings">Settings</a>
+                <button class="danger" onclick="logout()">Logout</button>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="overview">
+            <h2>Overview</h2>
+            <div class="metrics">
+                <div class="metric"><span>Guilds</span><strong id="m-guilds">0</strong></div>
+                <div class="metric"><span>Users</span><strong id="m-users">0</strong></div>
+                <div class="metric"><span>Warnings</span><strong id="m-warnings">0</strong></div>
+                <div class="metric"><span>Logs</span><strong id="m-logs">0</strong></div>
+                <div class="metric"><span>Bans</span><strong id="m-bans">0</strong></div>
+                <div class="metric"><span>Latency</span><strong id="m-latency">0ms</strong></div>
+            </div>
+        </section>
+
+        <section id="members">
+            <h2>Member Management</h2>
+            <div class="grid">
+                <div class="panel">
+                    <h3>Search & Filter</h3>
+                    <div class="field">
+                        <label>Guild</label>
+                        <select id="guild" onchange="loadMembers()"></select>
+                    </div>
+                    <div class="field">
+                        <label>Search Name/ID</label>
+                        <input id="search" placeholder="username or user ID" onkeyup="loadMembers()">
+                    </div>
+                </div>
+                <div class="panel" id="members-list">
+                    <h3>Members</h3>
+                    <div id="members-container" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="actions">
+            <h2>Quick Actions</h2>
+            <div class="panel">
+                <div class="tabs">
+                    <button class="tab active" onclick="switchTab('actions', 'timeout-tab')">Timeout</button>
+                    <button class="tab" onclick="switchTab('actions', 'ban-tab')">Ban</button>
+                    <button class="tab" onclick="switchTab('actions', 'warn-tab')">Warn</button>
+                </div>
+
+                <div id="timeout-tab" class="tab-content active">
+                    <div class="field">
+                        <label>Duration</label>
+                        <select id="timeout-duration">
+                            <option value="1m">1 minute</option>
+                            <option value="5m">5 minutes</option>
+                            <option value="10m" selected>10 minutes</option>
+                            <option value="1h">1 hour</option>
+                            <option value="1d">1 day</option>
+                            <option value="7d">7 days</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Reason</label>
+                        <input id="timeout-reason" placeholder="reason">
+                    </div>
+                </div>
+
+                <div id="ban-tab" class="tab-content">
+                    <div class="field">
+                        <label>Reason</label>
+                        <input id="ban-reason" placeholder="reason">
+                    </div>
+                </div>
+
+                <div id="warn-tab" class="tab-content">
+                    <div class="field">
+                        <label>Reason</label>
+                        <input id="warn-reason" placeholder="reason">
+                    </div>
+                </div>
+
+                <div class="row" style="margin-top: 14px;">
+                    <button class="danger" id="action-btn" style="width: auto; padding: 10px 14px;">Execute Action</button>
+                </div>
+            </div>
+        </section>
+
+        <section id="console">
+            <h2>Activity Console</h2>
+            <div class="panel">
+                <div class="console" id="console-logs"></div>
+                <button class="primary" onclick="loadConsole()" style="width: 100%; margin-top: 12px;">Refresh Logs</button>
+            </div>
+        </section>
+
+        <section id="settings">
+            <h2>Guild Settings</h2>
+            <div class="grid">
+                <div class="panel">
+                    <h3>Server Config</h3>
+                    <div class="field">
+                        <label>Prefix</label>
+                        <input id="prefix" maxlength="5" value=",">
+                    </div>
+                    <div class="field">
+                        <label>Welcome Channel ID</label>
+                        <input id="welcome_channel" placeholder="optional">
+                    </div>
+                    <div class="field">
+                        <label>Welcome Message</label>
+                        <textarea id="welcome_message"></textarea>
+                    </div>
+                    <div class="field">
+                        <label><input type="checkbox" id="welcome_enabled" style="width: auto;"> Enable Welcome</label>
+                    </div>
+                    <div class="field">
+                        <label><input type="checkbox" id="mass_mention_block" style="width: auto;"> Block Mass Mentions</label>
+                    </div>
+                    <button class="primary" onclick="saveSettings()" style="width: 100%;">Save Settings</button>
+                </div>
+
+                <div class="panel">
+                    <h3>Recent Moderation Logs</h3>
+                    <table>
+                        <thead><tr><th>Action</th><th>User</th><th>Reason</th><th>Time</th></tr></thead>
+                        <tbody id="logs-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="toast"></div>
+
+    <script>
+        const $ = (id) => document.getElementById(id);
+        let selectedMember = null;
+        let selectedAction = null;
+
+        async function json(url, options = {}) {
+            const res = await fetch(url, options);
+            return res.json();
+        }
+
+        function switchTab(section, tab) {
+            document.querySelectorAll(`#${section} .tab-content`).forEach(el => el.classList.remove('active'));
+            document.querySelectorAll(`#${section} .tab`).forEach(el => el.classList.remove('active'));
+            $(`#${tab}`).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function toast(msg, color = '#f6b047') {
+            const t = $('toast');
+            t.textContent = msg;
+            t.style.color = color;
+            setTimeout(() => t.textContent = '', 5000);
+        }
+
+        async function loadStats() {
+            const data = await json('/api/stats');
+            if (data.status !== 'success') return;
+            $('m-guilds').textContent = data.guilds;
+            $('m-users').textContent = data.users;
+            $('m-warnings').textContent = data.warnings;
+            $('m-logs').textContent = data.modlogs;
+            $('m-bans').textContent = data.bans;
+            $('m-latency').textContent = `${data.latency}ms`;
+        }
+
+        async function loadGuilds() {
+            const data = await json('/api/guilds');
+            const select = $('guild');
+            select.innerHTML = '';
+            data.guilds.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g.id;
+                opt.textContent = `${g.name} (${g.members})`;
+                select.appendChild(opt);
+            });
+            if (data.guilds.length) loadMembers();
+        }
+
+        async function loadMembers() {
+            const guildId = $('guild').value;
+            const search = $('search').value;
+            if (!guildId) return;
+            const data = await json(`/api/members/${guildId}?search=${search}&limit=50`);
+            const container = $('members-container');
+            container.innerHTML = '';
+            data.members.forEach(m => {
+                const div = document.createElement('div');
+                div.className = 'member-card';
+                div.onclick = () => selectMemberCard(m);
+                div.innerHTML = `
+                    <img class="member-avatar" src="${m.avatar}" onerror="this.src='https://discord.com/assets/1f0bfc0521d7502458e5c814bbc5214f.png'">
+                    <div class="member-info">
+                        <div class="member-name">${m.name}</div>
+                        <div class="member-id">ID: ${m.id} ${m.is_timed_out ? '⏱️' : ''}</div>
+                    </div>
+                    <div class="member-actions">
+                        <button class="warn" onclick="actionMember('${m.id}', 'warn')">⚠️</button>
+                        <button style="background: #faa61a;" onclick="actionMember('${m.id}', 'timeout')">⏱️</button>
+                        <button class="danger" onclick="actionMember('${m.id}', 'ban')">🚫</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function selectMemberCard(member) {
+            selectedMember = member;
+            toast(`Selected: ${member.name}`, '#35c47a');
+        }
+
+        function actionMember(userId, action) {
+            const guildId = $('guild').value;
+            if (!guildId) return toast('Select a guild first');
+            selectedMember = { id: parseInt(userId) };
+            selectedAction = action;
+            $('action-btn').textContent = `Execute ${action.toUpperCase()}`;
+            $('action-btn').onclick = () => executeAction(guildId, userId, action);
+        }
+
+        async function executeAction(guildId, userId, action) {
+            let reason = '';
+            let duration = '';
+            if (action === 'timeout') {
+                reason = $('timeout-reason').value || 'No reason';
+                duration = $('timeout-duration').value;
+            } else if (action === 'ban') {
+                reason = $('ban-reason').value || 'No reason';
+            } else if (action === 'warn') {
+                reason = $('warn-reason').value || 'No reason';
+            }
+            const result = await json(`/api/member_action/${guildId}/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, reason, duration })
+            });
+            toast(result.message || 'Action executed', result.status === 'success' ? '#35c47a' : '#ef5960');
+            if (result.status === 'success') {
+                loadMembers();
+                loadConsole();
+                loadLogs();
+            }
+        }
+
+        async function loadSettings() {
+            const guildId = $('guild').value;
+            if (!guildId) return;
+            const data = await json(`/api/settings/${guildId}`);
+            const s = data.settings;
+            $('prefix').value = s.prefix || ',';
+            $('welcome_channel').value = s.welcome_channel || '';
+            $('welcome_message').value = s.welcome_message || '';
+            $('welcome_enabled').checked = Boolean(s.welcome_enabled);
+            $('mass_mention_block').checked = Boolean(s.mass_mention_block);
+        }
+
+        async function saveSettings() {
+            const guildId = $('guild').value;
+            const payload = {
+                prefix: $('prefix').value,
+                welcome_channel: $('welcome_channel').value,
+                welcome_message: $('welcome_message').value,
+                welcome_enabled: $('welcome_enabled').checked,
+                mass_mention_block: $('mass_mention_block').checked
+            };
+            const result = await json(`/api/settings/${guildId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            toast('Settings saved!', result.status === 'success' ? '#35c47a' : '#ef5960');
+        }
+
+        async function loadConsole() {
+            const guildId = $('guild').value;
+            if (!guildId) return;
+            const data = await json(`/api/console_logs/${guildId}?limit=100`);
+            const console = $('console-logs');
+            console.innerHTML = '';
+            data.logs.forEach(log => {
+                const div = document.createElement('div');
+                div.className = `log-line ${log.level}`;
+                const time = new Date(log.created_at).toLocaleTimeString();
+                div.innerHTML = `<span class="log-time">[${time}]</span> ${log.message}`;
+                console.appendChild(div);
+            });
+            console.scrollTop = console.scrollHeight;
+        }
+
+        async function loadLogs() {
+            const guildId = $('guild').value;
+            const data = await json(`/api/modlogs?guild_id=${guildId}&limit=10`);
+            const body = $('logs-body');
+            body.innerHTML = '';
+            data.logs.slice(0, 10).forEach(log => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${log.action}</td>
+                    <td>${log.user_id}</td>
+                    <td>${log.reason || ''}</td>
+                    <td>${new Date(log.created_at).toLocaleString().split(',')[0]}</td>
+                `;
+                body.appendChild(tr);
+            });
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            location.href = '/login';
+        }
+
+        loadStats();
+        loadGuilds();
+        loadSettings();
+        loadConsole();
+        loadLogs();
+        setInterval(() => { loadStats(); loadConsole(); }, 10000);
+    </script>
+</body>
+</html>

