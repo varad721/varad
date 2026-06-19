@@ -1,402 +1,283 @@
-# Discord Bot Docker Deployment Guide
+# Deployment Guide
 
-This guide walks you through hosting the Advanced Discord Bot using Docker.
-
-## Quick Start (5 minutes)
-
-### 1. Prepare Environment Variables
-
-Copy the deployment template and fill in your Discord bot credentials:
+## Quick Start (Local)
 
 ```bash
-cp .env.docker .env
+# 1. Install Python 3.10+
+# 2. Clone/download project
+# 3. Create virtual environment
+python -m venv venv
+source venv/bin/activate  # or: venv\Scripts\activate on Windows
+
+# 4. Install dependencies
+pip install -r requirements.txt
+
+# 5. Configure
+cp .env.example .env
+# Edit .env with your values
+
+# 6. Run
+python bot.py
 ```
 
-Edit `.env` and add:
-- `DISCORD_TOKEN` - Your bot token from Discord Developer Portal
-- `APPLICATION_ID` - Your application ID
-- `OWNER_ID` - Your Discord user ID
-- `DASHBOARD_SECRET` - Generate a random secret: `openssl rand -base64 32`
-
-### 2. Build and Run
-
-```bash
-# Build the Docker image
-docker build -t discord-bot:latest .
-
-# Run with Docker Compose
-docker compose up -d
-
-# View logs
-docker compose logs -f
-```
-
-### 3. Access the Dashboard
-
-Dashboard runs on `http://localhost:5000`
+Visit: http://localhost:5000
 
 ---
 
-## Deployment Options
+## Deploy to Railway (RECOMMENDED)
 
-### Option A: Local Machine (Development/Testing)
+### Why Railway?
+- Free tier available
+- Easy GitHub integration
+- Auto-deploys on push
+- Environment variables in UI
+- Dashboard with logs
 
-```bash
-docker compose up -d
-```
+### Steps:
 
-**Pros:**
-- Simple setup
-- Quick testing
-- Low resource overhead
+1. **Create GitHub repo**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin https://github.com/yourusername/discord-bot.git
+   git push -u origin main
+   ```
 
-**Cons:**
-- Bot stops if machine shuts down
-- No automatic restart
-- Limited scalability
+2. **Go to railway.app**
+   - Login with GitHub
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Choose your bot repo
+
+3. **Add Variables**
+   - Click "Variables"
+   - Add these:
+     ```
+     DISCORD_TOKEN = your_token
+     DISCORD_CLIENT_ID = your_id
+     DISCORD_CLIENT_SECRET = your_secret
+     OWNER_ID = 123456789
+     REDIRECT_URI = https://yourbotname-production.up.railway.app/callback
+     PORT = 5000
+     ```
+
+4. **Get your URL**
+   - Railway creates URL automatically
+   - Update `REDIRECT_URI` in Discord settings
 
 ---
 
-### Option B: VPS (Production)
+## Deploy to Render.com
 
-Popular VPS providers: DigitalOcean, Linode, Vultr, AWS, Azure, Google Cloud
+### Steps:
 
-#### 1. Connect to VPS via SSH
+1. **Create GitHub repo** (same as Railway)
+
+2. **Go to render.com**
+   - Sign up
+   - Click "New +"
+   - Select "Web Service"
+   - Connect GitHub repo
+
+3. **Configure**
+   - Build Command: `pip install -r requirements.txt`
+   - Start Command: `python bot.py`
+   - Environment: Python 3.10
+
+4. **Add Variables**
+   - Click "Environment"
+   - Add all variables from .env
+
+5. **Deploy**
+   - Click "Create Web Service"
+   - Get URL from dashboard
+   - Update Discord OAuth settings
+
+---
+
+## Deploy to Replit
+
+### Steps:
+
+1. **Create Replit account** → replit.com
+
+2. **Click "Create"** → "Import from GitHub"
+
+3. **Paste your GitHub URL**
+
+4. **Click Secrets** (lock icon)
+   - Add all variables
+
+5. **Run:**
+   ```bash
+   python bot.py
+   ```
+
+---
+
+## Deploy to DigitalOcean / Linode (VPS)
+
+### Prerequisites:
+- VPS with Ubuntu 20.04+
+- SSH access
+
+### Steps:
 
 ```bash
-ssh root@your_vps_ip
-```
+# 1. SSH into server
+ssh root@your_ip
 
-#### 2. Install Docker
+# 2. Update system
+apt update && apt upgrade -y
 
-```bash
-# Ubuntu/Debian
-curl -fsSL https://get.docker.com -o get-docker.sh
-sudo sh get-docker.sh
+# 3. Install Python & dependencies
+apt install -y python3 python3-pip python3-venv git
 
-# Add user to docker group (optional)
-sudo usermod -aG docker $USER
-```
-
-#### 3. Clone Your Bot Repository
-
-```bash
-git clone https://github.com/your-username/discord-bot.git
+# 4. Clone repo
+git clone https://github.com/yourusername/discord-bot.git
 cd discord-bot
+
+# 5. Create venv
+python3 -m venv venv
+source venv/bin/activate
+
+# 6. Install requirements
+pip install -r requirements.txt
+
+# 7. Create .env
+nano .env
+# Paste your variables
+
+# 8. Install & start with systemd
+sudo nano /etc/systemd/system/discord-bot.service
 ```
 
-#### 4. Configure Environment
+Paste this:
+```ini
+[Unit]
+Description=Discord Bot
+After=network.target
 
-```bash
-cp .env.docker .env
-nano .env  # Edit with your credentials
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/discord-bot
+Environment="PATH=/root/discord-bot/venv/bin"
+ExecStart=/root/discord-bot/venv/bin/python bot.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-#### 5. Deploy
-
+Then:
 ```bash
-docker compose up -d
-```
+sudo systemctl daemon-reload
+sudo systemctl enable discord-bot
+sudo systemctl start discord-bot
+sudo systemctl status discord-bot  # Check status
 
-#### 6. View Logs
-
-```bash
-docker compose logs -f
+# View logs:
+journalctl -u discord-bot -f
 ```
 
 ---
 
-### Option C: Docker Hub Registry
+## Environment Variables Explained
 
-Push your image to Docker Hub for easy deployment across multiple servers.
-
-#### 1. Create Docker Hub Account
-
-Visit https://hub.docker.com and sign up.
-
-#### 2. Create Repository
-
-Click "Create Repository" and name it `discord-bot`.
-
-#### 3. Push Image
-
-```bash
-# Login to Docker Hub
-docker login
-
-# Tag image with your username
-docker tag discord-bot:latest your-username/discord-bot:latest
-
-# Push to Docker Hub
-docker push your-username/discord-bot:latest
-```
-
-#### 4. Deploy from Any Server
-
-```bash
-docker run -d \
-  --name discord-bot \
-  --restart unless-stopped \
-  -e DISCORD_TOKEN=your_token \
-  -e APPLICATION_ID=your_id \
-  -e OWNER_ID=your_user_id \
-  -e DASHBOARD_SECRET=your_secret \
-  -p 5000:5000 \
-  -v bot-data:/app/data \
-  your-username/discord-bot:latest
-```
+| Variable | Description |
+|----------|-------------|
+| `DISCORD_TOKEN` | Bot token from Discord Developer Portal |
+| `DISCORD_CLIENT_ID` | OAuth Client ID |
+| `DISCORD_CLIENT_SECRET` | OAuth Client Secret (keep secret!) |
+| `OWNER_ID` | Your Discord user ID |
+| `REDIRECT_URI` | Where Discord redirects after login (deployment URL) |
+| `FLASK_SECRET` | Secret for Flask sessions (any random string) |
+| `PORT` | Port to run on (default 5000, Railway sets to 5000) |
+| `DATABASE_PATH` | Where to store SQLite db (default: data/bot.db) |
 
 ---
 
-### Option D: Docker Compose with Volumes (Recommended Production)
+## Getting OAuth Credentials
 
-```yaml
-version: '3.8'
-
-services:
-  discord-bot:
-    image: discord-bot:latest
-    container_name: discord-bot
-    restart: unless-stopped
-    environment:
-      - DISCORD_TOKEN=${DISCORD_TOKEN}
-      - APPLICATION_ID=${APPLICATION_ID}
-      - OWNER_ID=${OWNER_ID}
-      - DASHBOARD_SECRET=${DASHBOARD_SECRET}
-      - ENABLE_DASHBOARD=true
-      - DASHBOARD_PORT=5000
-      - LOG_LEVEL=INFO
-    ports:
-      - "5000:5000"
-    volumes:
-      - bot-data:/app/data
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
-          memory: 512M
-
-volumes:
-  bot-data:
-```
+1. Go to https://discord.com/developers/applications
+2. Click your bot application
+3. Go to "OAuth2" tab
+4. Copy **Client ID** and **Client Secret**
+5. Go to "OAuth2 → Redirects"
+6. Add your deployment URL + `/callback`
+   - Local: `http://localhost:5000/callback`
+   - Production: `https://yourbotname.up.railway.app/callback`
 
 ---
 
-## Management Commands
+## Post-Deployment Checklist
 
-### View Logs
+- [ ] Bot is online in Discord
+- [ ] Dashboard loads at your URL
+- [ ] Can login with Discord
+- [ ] Commands work (`/help`)
+- [ ] No errors in logs
+- [ ] Database file created
+- [ ] Modlogs showing actions
 
-```bash
-# Real-time logs
-docker compose logs -f
+---
 
-# Last 50 lines
-docker compose logs --tail=50
-
-# Logs since last hour
-docker compose logs --since 1h
-```
-
-### Stop Bot
+## Update Bot
 
 ```bash
-docker compose down
-```
-
-### Restart Bot
-
-```bash
-docker compose restart
-```
-
-### Update Bot Code
-
-```bash
+# Pull latest changes
 git pull origin main
-docker compose down
-docker build -t discord-bot:latest .
-docker compose up -d
-```
 
-### View Resource Usage
-
-```bash
-docker stats discord-bot
-```
-
-### Shell Access (for debugging)
-
-```bash
-docker compose exec discord-bot sh
+# Restart service (Railway auto-restarts)
+# For VPS:
+sudo systemctl restart discord-bot
 ```
 
 ---
 
-## Reverse Proxy Setup (Optional)
+## Troubleshooting Deployment
 
-If hosting on a VPS, use Nginx or Traefik to handle the dashboard.
+**Bot offline?**
+- Check DISCORD_TOKEN is correct
+- Verify bot is in your server
+- Check deployment logs
 
-### With Nginx
+**Dashboard won't load?**
+- Verify REDIRECT_URI is set in Discord settings
+- Check CLIENT_ID and CLIENT_SECRET
+- Look at Flask logs
 
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
+**Database errors?**
+- Check file permissions: `chmod 755 data/`
+- Delete `data/bot.db` to reset
 
-    location / {
-        proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-### Enable HTTPS (Let's Encrypt)
-
-```bash
-sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d your-domain.com
-```
+**Memory issues?**
+- Upgrade plan (Railway: starter to hobby)
+- Close unused processes
+- Check for memory leaks
 
 ---
 
-## Troubleshooting
+## Monitoring
 
-### Bot Not Starting
-
-Check logs:
-```bash
-docker compose logs
-```
-
-Common issues:
-- Missing `DISCORD_TOKEN` in `.env`
-- Discord intents not enabled in Developer Portal
-- Port 5000 already in use
-
-### Dashboard Not Loading
-
-```bash
-# Check if service is running
-docker compose ps
-
-# Check port binding
-docker compose port discord-bot 5000
-
-# Verify connectivity
-curl http://localhost:5000/health
-```
-
-### Out of Memory
-
-Increase Docker memory limit in `.env`:
-```yaml
-deploy:
-  resources:
-    limits:
-      memory: 1G
-```
-
-### Database Issues
-
-Reset database:
-```bash
-docker compose exec discord-bot rm -f /app/data/bot.db
-docker compose restart
-```
-
----
-
-## Monitoring & Backups
-
-### Backup Database
-
-```bash
-# Create backup
-docker compose exec discord-bot cp /app/data/bot.db /app/data/bot.db.backup
-
-# Copy to local machine
-docker cp discord-bot:/app/data/bot.db ./bot.db.backup
-```
-
-### Automated Backups (Linux)
-
-Add to crontab:
-```bash
-0 2 * * * docker cp discord-bot:/app/data/bot.db /backups/bot.db.$(date +\%Y\%m\%d)
-```
-
-### Monitor Uptime
-
-```bash
-# Check restart count
-docker compose ps
-
-# View container stats
-docker stats --no-stream
-```
-
----
-
-## Security Best Practices
-
-1. **Use `.env` file** - Never hardcode secrets
-2. **Change `DASHBOARD_SECRET`** - Generate a strong random string
-3. **Use HTTPS** - Set up SSL with Let's Encrypt
-4. **Restrict Dashboard** - Use reverse proxy auth or firewall rules
-5. **Keep Docker Updated** - Run `docker system prune` regularly
-6. **Limit Resources** - Set memory/CPU limits in compose file
-7. **Monitor Logs** - Review logs regularly for errors
-
----
-
-## Performance Optimization
-
-### 1. Reduce Image Size
-
-The current image is ~185MB. To reduce further:
-- Use alpine base (already applied)
-- Remove unused dependencies
-
-### 2. Optimize Memory Usage
-
-Adjust in `docker-compose.yml`:
-```yaml
-deploy:
-  resources:
-    limits:
-      memory: 256M  # Reduce if needed
-```
-
-### 3. Enable Log Rotation
-
-Already configured in `docker-compose.yml` to prevent disk bloat.
+**Railway:** Dashboard shows logs + metrics
+**Render:** Real-time logs in dashboard
+**VPS:** Use `journalctl -u discord-bot -f` for logs
 
 ---
 
 ## Support
 
-For issues:
-1. Check logs: `docker compose logs`
-2. Verify `.env` configuration
-3. Ensure Discord bot permissions are correct
-4. Check port availability: `lsof -i :5000`
+Stuck? Check logs first:
+```bash
+# Local:
+# Just watch console output
 
----
+# Railway/Render:
+# Check "Logs" tab in dashboard
 
-## Next Steps
-
-- [ ] Configure your bot token and credentials
-- [ ] Test locally first: `docker compose up -d`
-- [ ] Deploy to production VPS
-- [ ] Set up SSL/HTTPS with reverse proxy
-- [ ] Configure monitoring and backups
-- [ ] Add GitHub Actions CI/CD (optional)
+# VPS:
+journalctl -u discord-bot -f
+```

@@ -1,139 +1,74 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bot Dashboard Login</title>
     <style>
-        :root {
-            --bg: #101318;
-            --panel: #171b22;
-            --line: #303846;
-            --text: #eef2f7;
-            --muted: #9aa7b8;
-            --brand: #5865f2;
-            --bad: #ef5960;
-        }
-
-        * { box-sizing: border-box; }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            margin: 0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: grid;
-            place-items: center;
-            background: var(--bg);
-            color: var(--text);
-            font-family: Segoe UI, system-ui, Arial, sans-serif;
-            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
-        .login {
-            width: min(420px, 100%);
-            background: var(--panel);
-            border: 1px solid var(--line);
-            border-radius: 8px;
-            padding: 24px;
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 400px;
+            text-align: center;
         }
-
-        .mark {
-            width: 42px;
-            height: 42px;
-            border-radius: 8px;
-            background: var(--brand);
-            display: grid;
-            place-items: center;
-            font-weight: 800;
-            margin-bottom: 14px;
+        .login-card h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
         }
-
-        h1 { margin: 0 0 8px; font-size: 24px; }
-        p { margin: 0 0 18px; color: var(--muted); }
-
-        label {
-            display: block;
-            color: var(--muted);
-            margin-bottom: 6px;
-            font-size: 13px;
+        .login-card p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
         }
-
-        input, button {
-            width: 100%;
-            border-radius: 8px;
-            padding: 11px;
-            font: inherit;
-        }
-
-        input {
-            background: #0f1217;
-            color: var(--text);
-            border: 1px solid var(--line);
-            margin-bottom: 12px;
-        }
-
-        button {
-            background: var(--brand);
+        .login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #5865F2;
             color: white;
-            border: 1px solid var(--brand);
-            cursor: pointer;
-        }
-
-        .error {
-            display: none;
-            margin-bottom: 12px;
-            padding: 10px;
+            padding: 12px 30px;
             border-radius: 8px;
-            border: 1px solid rgba(239, 89, 96, .5);
-            color: #ffdce0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
         }
-
-        .hint {
-            margin-top: 14px;
-            font-size: 13px;
-            color: var(--muted);
-            line-height: 1.5;
+        .login-btn:hover {
+            background: #4752C4;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(88, 101, 242, 0.4);
         }
-
-        code {
-            background: #0f1217;
-            border: 1px solid var(--line);
-            border-radius: 6px;
-            padding: 2px 6px;
-            color: #cbd5ff;
+        .icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 20px;
         }
     </style>
 </head>
 <body>
-    <main class="login">
-        <div class="mark">B</div>
+    <div class="login-card">
+        <svg class="icon" viewBox="0 0 71 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M60.1045 4.8978C55.3192 2.8214 50.3118 1.2922 45.1192 0.473499C44.4803 1.5743 43.7236 3.1622 43.1522 4.4432C37.7623 3.5955 32.4519 3.5955 27.1905 4.4432C26.6191 3.1622 25.8624 1.5743 25.1235 0.473499C19.9309 1.2922 14.9235 2.8214 10.1382 4.8978C1.70823 21.7345 -0.896697 38.5894 0.293905 55C5.47541 58.305 10.4417 60.4065 15.1994 61.7649C16.3014 60.0577 17.2751 58.3extractMessages C18.3234 56.4564C16.7623 55.9547 15.2513 55.3429 13.7841 54.6128C13.8701 54.5220 13.9444 54.4269 14.0159 54.3363C58.6769 71.8667 118.572 71.2523 175.293 52.6477C175.364 52.7486 175.433 52.8581 175.500 52.9649C174.0181 53.6949 172.502 54.3066 170.931 54.8083C169.464 55.5384 167.953 56.1502 166.392 56.6519C167.440 58.3591 168.414 60.0663 169.516 61.7649C174.273 60.4065 179.240 58.305 184.425 55C185.906 35.7830 181.960 19.5062 167.488 4.8978C162.705 2.8214 157.700 1.2922 152.506 0.473499C151.867 1.5743 151.110 3.1622 150.539 4.4432C145.148 3.5955 139.848 3.5955 134.587 4.4432C134.016 3.1622 133.259 1.5743 132.521 0.473499C127.328 1.2922 122.321 2.8214 117.536 4.8978C109.107 21.7345 105.501 38.5894 106.692 55C111.873 58.305 116.840 60.4065 121.597 61.7649C122.699 60.0577 123.673 58.3462 124.721 56.4564C123.160 55.9547 121.649 55.3429 120.182 54.6128C120.268 54.5220 120.342 54.4269 120.414 54.3363C177.033 71.8667 236.929 71.2523 293.650 52.6477C293.721 52.7486 293.790 52.8581 293.857 52.9649C292.375 53.6949 290.859 54.3066 289.288 54.8083C287.821 55.5384 286.310 56.1502 284.749 56.6519C285.797 58.3591 286.771 60.0663 287.873 61.7649C292.630 60.4065 297.597 58.305 302.782 55C304.263 35.7830 300.317 19.5062 285.845 4.8978Z" fill="currentColor"/>
+        </svg>
         <h1>Bot Dashboard</h1>
-        <p>Login with an owner Discord user ID from your `.env`.</p>
-        <div class="error" id="error"></div>
-        <form id="form">
-            <label for="user_id">Discord User ID</label>
-            <input id="user_id" autocomplete="off" placeholder="123456789012345678" required>
-            <button type="submit">Login</button>
-        </form>
-        <div class="hint">Enable Discord Developer Mode, right-click your profile, copy User ID, and make sure it is listed in <code>OWNER_ID</code>.</div>
-    </main>
-    <script>
-        document.getElementById('form').addEventListener('submit', async (event) => {
-            event.preventDefault();
-            const error = document.getElementById('error');
-            error.style.display = 'none';
-            const response = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({user_id: document.getElementById('user_id').value})
-            });
-            const data = await response.json();
-            if (data.status === 'success') {
-                location.href = '/';
-            } else {
-                error.textContent = data.message || 'Login failed.';
-                error.style.display = 'block';
-            }
-        });
-    </script>
+        <p>Login with Discord to manage your server</p>
+        <a href="/auth" class="login-btn">
+            <span>🔗</span> Login with Discord
+        </a>
+    </div>
 </body>
 </html>
